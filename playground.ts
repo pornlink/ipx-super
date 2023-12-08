@@ -5,6 +5,7 @@ const ipx = createIPX({
   maxAge:60*60*24*30,
   httpStorage: ipxHttpStorage({
     domains: ["*.picsum.photos",'*.tgjogo.com'],
+    maxAge:3000
   }),
 });
 

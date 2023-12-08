@@ -58,7 +58,7 @@ export function createIPXH3Handler(ipx: IPX) {
       }
     }
     // Auto format
-    const mFormat = modifiers.f || modifiers.format||'auto';
+    const mFormat = modifiers.f || modifiers.format;
     if (mFormat === "auto") {
       const acceptHeader = getRequestHeader(event, "accept") || "";
       const autoFormat = autoDetectFormat(

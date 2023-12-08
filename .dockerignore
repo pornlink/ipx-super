@@ -1,0 +1,14 @@
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log
+dist
+test
+.idea
+.vscode
+*.pem
+script
+.github
+.cache
+renovate.json
+vitest.config.ts

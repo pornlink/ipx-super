@@ -7,7 +7,7 @@ import { imageMeta as getImageMeta, type ImageMeta } from "image-meta";
 import type { Config as SVGOConfig } from "svgo";
 import cacache from 'cacache'
 // @ts-ignore
-import { hash } from "ohash";
+import { hash,murmurHash } from "ohash";
 import { resolve } from 'pathe'
 import type { IPXStorage } from "./types";
 import { HandlerName, applyHandler, getHandler } from "./handlers";
@@ -37,7 +37,7 @@ export type IPXOptions = {
 
   storage: IPXStorage;
   httpStorage?: IPXStorage;
-
+  storageMaxAge?:number
   svgo?: false | SVGOConfig;
 };
 
@@ -142,7 +142,6 @@ export function createIPX(userOptions: IPXOptions): IPX {
     });
 
     const process = cachedPromise(async () => {
-      // const _sourceMeta = await getSourceMeta();
       const sourceData = await getSourceData();
 
       // Detect source image meta
@@ -248,15 +247,16 @@ export function createIPX(userOptions: IPXOptions): IPX {
     }
     // eslint-disable-next-line require-await
    const cacacheGet=cachedPromise(async () =>{
-     const file=hash(id);
+     const file=murmurHash(id)+hash(modifiers);
      const item= await getItem(file) ;
-
-     if (item&&(item.metadata.time+options.maxAge)>=Date.now()){
+     const storageMaxAge=options.storageMaxAge||7*60*60*24;
+     if (item&&(item.metadata.time+storageMaxAge)>=Date.now()){
        return {
          data:item.data,
          ...item.metadata.image,
        }
      }else {
+       console.log(`Cache Time:${item?.metadata?.time} maxAge:${options.maxAge}`)
        await cacache.rm(cachePath,file)
      };
      const data=await process();
