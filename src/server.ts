@@ -28,9 +28,7 @@ export function createIPXH3Handler(ipx: IPX) {
     const [modifiersString = "", ...idSegments] = event.path
       .slice(1 /* leading slash */)
       .split("/");
-
     const id = safeString(decode(idSegments.join("/")));
-
     // Validate
     if (!modifiersString) {
       throw createError({
@@ -59,7 +57,6 @@ export function createIPXH3Handler(ipx: IPX) {
           .join("_");
       }
     }
-
     // Auto format
     const mFormat = modifiers.f || modifiers.format;
     if (mFormat === "auto") {
@@ -75,7 +72,9 @@ export function createIPXH3Handler(ipx: IPX) {
         appendResponseHeader(event, "vary", "Accept");
       }
     }
-
+    if (!mFormat){
+      modifiers.format='webp';
+    }
     // Create request
     const img = ipx(id, modifiers);
 

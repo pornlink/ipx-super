@@ -2,11 +2,9 @@ import { createIPX, createIPXH3App, ipxFSStorage, ipxHttpStorage } from "./src";
 
 const ipx = createIPX({
   storage: ipxFSStorage(),
-  alias: {
-    "/picsum": "https://picsum.photos",
-  },
+  maxAge:60*60*24*30,
   httpStorage: ipxHttpStorage({
-    domains: ["picsum.photos", "images.unsplash.com"],
+    domains: ["*.picsum.photos",'*.tgjogo.com'],
   }),
 });
 

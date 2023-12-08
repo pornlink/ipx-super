@@ -2,8 +2,13 @@ import { defu } from "defu";
 import { hasProtocol, joinURL, withLeadingSlash } from "ufo";
 import type { SharpOptions } from "sharp";
 import { createError } from "h3";
+// @ts-ignore
 import { imageMeta as getImageMeta, type ImageMeta } from "image-meta";
 import type { Config as SVGOConfig } from "svgo";
+import cacache from 'cacache'
+// @ts-ignore
+import { hash } from "ohash";
+import { resolve } from 'pathe'
 import type { IPXStorage } from "./types";
 import { HandlerName, applyHandler, getHandler } from "./handlers";
 import { cachedPromise, getEnv } from "./utils";
@@ -55,7 +60,7 @@ export function createIPX(userOptions: IPXOptions): IPX {
     maxAge: getEnv<number>("IPX_MAX_AGE") ?? 60 /* 1 minute */,
     sharpOptions: {},
   } satisfies Omit<IPXOptions, "storage">);
-
+  const cachePath = resolve('./.cache');
   // Normalize alias to start with leading slash
   options.alias = Object.fromEntries(
     Object.entries(options.alias || {}).map((e) => [
@@ -95,7 +100,6 @@ export function createIPX(userOptions: IPXOptions): IPX {
         id = joinURL(options.alias[base], id.slice(base.length));
       }
     }
-
     // Resolve Storage
     const storage = hasProtocol(id)
       ? options.httpStorage || options.storage
@@ -221,28 +225,59 @@ export function createIPX(userOptions: IPXOptions): IPX {
       for (const h of handlers) {
         sharp = applyHandler(handlerContext, sharp, h.handler, h.args) || sharp;
       }
-
       // Apply format
       if (SUPPORTED_FORMATS.has(format || "")) {
         sharp = sharp.toFormat(format as any, {
-          quality: handlerContext.quality,
+          quality: handlerContext.quality||65,
           progressive: format === "jpeg",
         });
       }
-
-      // Convert to buffer
       const processedImage = await sharp.toBuffer();
-
       return {
         data: processedImage,
         format,
         meta: imageMeta,
       };
     });
+    const  getItem=async (file:string) =>{
+      try {
+        return await cacache.get(cachePath,file)
+      }catch {
+        return null
+      }
+    }
+    // eslint-disable-next-line require-await
+   const cacacheGet=cachedPromise(async () =>{
+     const file=hash(id);
+     const item= await getItem(file) ;
 
+     if (item&&(item.metadata.time+options.maxAge)>=Date.now()){
+       return {
+         data:item.data,
+         ...item.metadata.image,
+       }
+     }else {
+       await cacache.rm(cachePath,file)
+     };
+     const data=await process();
+     await cacache.put(cachePath,file,data.data,{
+       metadata:{
+         time:Date.now(),
+         image:{
+           format:data.format,
+           meta: data.meta,
+         }
+       }
+     })
+     return data
+   })
     return {
       getSourceMeta,
-      process,
+      process:async () => {
+        const data=await cacacheGet();
+        if (data){ return data; }
+        return  await process()
+      },
     };
   };
 }
