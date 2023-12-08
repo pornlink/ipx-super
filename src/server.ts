@@ -58,7 +58,7 @@ export function createIPXH3Handler(ipx: IPX) {
       }
     }
     // Auto format
-    const mFormat = modifiers.f || modifiers.format;
+    const mFormat = modifiers.f || modifiers.format||'auto';
     if (mFormat === "auto") {
       const acceptHeader = getRequestHeader(event, "accept") || "";
       const autoFormat = autoDetectFormat(
@@ -72,9 +72,9 @@ export function createIPXH3Handler(ipx: IPX) {
         appendResponseHeader(event, "vary", "Accept");
       }
     }
-    if (!mFormat){
-      modifiers.format='webp';
-    }
+    // if (!mFormat){
+    //   modifiers.format='webp';
+    // }
     // Create request
     const img = ipx(id, modifiers);
 
